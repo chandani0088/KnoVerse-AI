@@ -1,9 +1,10 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from pathlib import Path
 import shutil
-from app.services.document_service.cleaner import clean_text
 
 from app.services.document_service.extractor import extract_text_from_pdf
+from app.services.document_service.cleaner import clean_text
+from app.services.document_service.chunker import chunk_text
 
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
@@ -16,7 +17,8 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 @router.post("/upload")
 async def upload_document(file: UploadFile = File(...)):
     """
-    Upload a PDF document and extract its text.
+    Upload a PDF document, extract its text,
+    clean the text, and split it into chunks.
     """
 
     if not file.filename:
@@ -34,17 +36,26 @@ async def upload_document(file: UploadFile = File(...)):
     file_path = UPLOAD_DIR / file.filename
 
     try:
+        # Save uploaded PDF
         with file_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
+        # Extract text
         raw_text = extract_text_from_pdf(str(file_path))
+
+        # Clean text
         text = clean_text(raw_text)
+
+        # Create chunks
+        chunks = chunk_text(text)
 
         return {
             "filename": file.filename,
             "status": "processed",
             "text_length": len(text),
-            "text": clean_text(text)
+            "chunk_count": len(chunks),
+            "chunks": chunks,
+            "text": text
         }
 
     except Exception as e:
