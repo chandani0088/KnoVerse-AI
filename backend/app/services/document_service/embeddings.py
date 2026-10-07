@@ -1,4 +1,5 @@
 from sentence_transformers import SentenceTransformer
+from typing import List
 
 
 MODEL_NAME = "all-MiniLM-L6-v2"
@@ -6,9 +7,15 @@ MODEL_NAME = "all-MiniLM-L6-v2"
 model = SentenceTransformer(MODEL_NAME)
 
 
-def generate_embeddings(texts: list[str]):
+def generate_embeddings(texts: List[str]) -> List[List[float]]:
     """
-    Convert text chunks into numerical vectors.
+    Convert text chunks into numerical embeddings.
+
+    Args:
+        texts: List of text chunks.
+
+    Returns:
+        List of embedding vectors.
     """
 
     if not texts:
