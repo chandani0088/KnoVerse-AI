@@ -6,7 +6,7 @@ from app.services.document_service.extractor import extract_text_from_pdf
 from app.services.document_service.cleaner import clean_text
 from app.services.document_service.chunker import chunk_text
 from app.services.document_service.embeddings import generate_embeddings
-from app.services.document_service.vector_store import VectorStore
+from app.services.document_service.vector_store import vector_store
 
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
@@ -14,8 +14,6 @@ router = APIRouter(prefix="/documents", tags=["Documents"])
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
-
-vector_store = VectorStore()
 
 
 @router.post("/upload")

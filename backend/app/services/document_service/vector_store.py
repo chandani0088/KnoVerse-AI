@@ -42,6 +42,11 @@ class VectorStore:
 
         self.index.add(vectors)
         self.documents.extend(texts)
+    def count(self) -> int:
+        """
+        Return the number of stored vectors.
+        """
+        return self.index.ntotal
 
     def search(
         self,
@@ -74,3 +79,5 @@ class VectorStore:
             })
 
         return results
+# Shared vector store instance
+vector_store = VectorStore()
