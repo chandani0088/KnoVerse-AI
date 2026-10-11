@@ -17,15 +17,15 @@ class VectorStore:
 
         # Keep original text chunks
         self.documents: List[str] = []
+        self.metadatas: List[dict] = []
 
     def add_embeddings(
         self,
         embeddings: List[List[float]],
-        texts: List[str]
+        texts: List[str],
+        metadatas: List[dict] | None = None
     ):
-        """
-        Add embeddings and their corresponding text chunks.
-        """
+        """Store embeddings, text chunks, and metadata."""
 
         if not embeddings:
             return
@@ -35,13 +35,23 @@ class VectorStore:
                 "Number of embeddings must match number of texts"
             )
 
-        vectors = np.array(
-            embeddings,
-            dtype="float32"
-        )
+        if metadatas is None:
+            metadatas = [{} for _ in texts]
+
+        if len(metadatas) != len(texts):
+            raise ValueError(
+                "Number of metadata entries must match number of texts"
+            )
+
+        vectors = np.asarray(embeddings, dtype="float32")
+
+        if vectors.ndim != 2 or vectors.shape[1] != self.dimension:
+            raise ValueError("Invalid embedding dimensions")
 
         self.index.add(vectors)
         self.documents.extend(texts)
+        self.metadatas.extend(metadatas)
+
     def count(self) -> int:
         """
         Return the number of stored vectors.

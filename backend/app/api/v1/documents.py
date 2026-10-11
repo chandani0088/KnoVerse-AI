@@ -58,8 +58,14 @@ async def upload_document(file: UploadFile = File(...)):
         # Store embeddings in FAISS
         vector_store.add_embeddings(
             embeddings,
-            chunks
+            chunks,
+            metadatas=[
+                {"filename": file.filename}
+                for _ in chunks
+            ]
         )
+        print("UPLOAD STORE ID:", id(vector_store))
+        print("UPLOAD VECTOR COUNT:", vector_store.count())
 
         return {
             "filename": file.filename,

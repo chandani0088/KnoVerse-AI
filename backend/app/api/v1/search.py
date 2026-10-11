@@ -35,8 +35,8 @@ async def search_documents(request: SearchRequest):
     query_embedding = generate_embeddings(
         [request.query]
     )[0]
-    print("FAISS vector count:", vector_store.count())
-
+    print("SEARCH STORE ID:", id(vector_store))
+    print("SEARCH VECTOR COUNT:", vector_store.count())
     # Search similar document chunks
     results = vector_store.search(
         query_embedding,
