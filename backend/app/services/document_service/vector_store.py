@@ -58,22 +58,27 @@ class VectorStore:
         """
         return self.index.ntotal
 
+    
     def search(
         self,
         query_embedding: List[float],
         top_k: int = 3
     ):
-        """
-        Search for the most similar text chunks.
-        """
+        """Search for the most similar text chunks."""
 
         if self.index.ntotal == 0:
             return []
 
-        query_vector = np.array(
+        if top_k < 1:
+            raise ValueError("top_k must be at least 1")
+
+        query_vector = np.asarray(
             [query_embedding],
             dtype="float32"
         )
+
+        if query_vector.shape[1] != self.dimension:
+            raise ValueError("Invalid query embedding dimensions")
 
         scores, indices = self.index.search(
             query_vector,
@@ -82,12 +87,17 @@ class VectorStore:
 
         results = []
 
-        for score, index in zip(scores[0], indices[0]):
+        for score, idx in zip(scores[0], indices[0]):
+            if idx < 0:
+                continue
+
             results.append({
-                "text": self.documents[index],
-                "score": float(score)
+                "text": self.documents[idx],
+                "score": float(score),
+                "metadata": self.metadatas[idx]
             })
 
         return results
+
 # Shared vector store instance
 vector_store = VectorStore()
