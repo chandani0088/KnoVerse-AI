@@ -1,4 +1,4 @@
-
+from typing import Annotated
 from pathlib import Path
 from uuid import uuid4
 import shutil
@@ -97,10 +97,9 @@ async def upload_document(file: UploadFile = File(...)):
 
 @router.post("/upload-multiple")
 async def upload_multiple_documents(
-    files: List[UploadFile] = File(
-        ...,
-        description="Select one or more PDF files",
-    ),
+    files: Annotated[list[UploadFile], File(
+        description="Select one or more PDF files"
+    )],
 ):
     """Upload and process multiple PDFs."""
 

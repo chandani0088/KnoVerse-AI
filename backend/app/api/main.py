@@ -1,3 +1,4 @@
+from fastapi.openapi.utils import get_openapi
 from fastapi import FastAPI
 
 from app.api.v1.documents import router as documents_router
@@ -36,3 +37,48 @@ def health_check():
     return {
         "status": "healthy"
     }
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+
+    # Use the OpenAPI version supported by Swagger UI file inputs.
+    schema["openapi"] = "3.0.3"
+
+    components = schema.get("components", {}).get("schemas", {})
+
+    for component in components.values():
+        properties = component.get("properties", {})
+
+        for prop in properties.values():
+            # Fix a single file field.
+            if (
+                prop.get("type") == "string"
+                and prop.get("contentMediaType") == "application/octet-stream"
+            ):
+                prop.pop("contentMediaType", None)
+                prop["format"] = "binary"
+
+            # Fix a list of files.
+            items = prop.get("items", {})
+            if (
+                prop.get("type") == "array"
+                and items.get("contentMediaType") == "application/octet-stream"
+            ):
+                items.pop("contentMediaType", None)
+                items["type"] = "string"
+                items["format"] = "binary"
+
+    app.openapi_schema = schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
+    

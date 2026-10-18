@@ -25,7 +25,9 @@ def ask_question(request: AskRequest):
             question=request.question,
             top_k=request.top_k,
         )
-    except Exception:
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail="Failed to generate an answer. Check backend logs."
