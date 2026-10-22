@@ -126,7 +126,14 @@ class VectorStore:
         self.index = saved_index
         self.documents = documents
         self.metadatas = metadatas
-
+        
+    def has_document_hash(self, file_hash: str) -> bool:
+        """Check whether a document with this file hash is already indexed."""
+        return any(
+            metadata.get("file_hash") == file_hash
+            for metadata in self.metadatas
+        )
+    
     def count(self) -> int:
         """Return the number of stored vectors."""
         return self.index.ntotal

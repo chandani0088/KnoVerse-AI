@@ -1,5 +1,6 @@
 
 import os
+import time
 from dotenv import load_dotenv
 from google import genai
 
@@ -62,8 +63,8 @@ class RAGService:
                 sources.append(filename)
 
         context = "\n\n".join(context_parts)
-
-        # Step 4: Ask Gemini to answer using the retrieved context.
+        
+        # Step 4: Build the prompt for Gemini.
         prompt = f"""
 You are KnoVerse AI, a document question-answering assistant.
 
@@ -79,17 +80,49 @@ User question:
 {question}
 """
 
-        response = self.client.models.generate_content(
-            model=self.model,
-            contents=prompt,
-        )
+        
+        # Step 4: Generate an answer with retries for temporary 503 errors.
+        response = None
+
+        for attempt in range(3):
+            try:
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=prompt,
+                )
+                break
+
+            except Exception as exc:
+                status_code = (
+                    getattr(exc, "code", None)
+                    or getattr(exc, "status_code", None)
+                )
+
+                is_temporary_503 = (
+                    status_code == 503 or "503" in str(exc)
+                )
+
+                if not is_temporary_503 or attempt == 2:
+                    raise
+
+                wait_seconds = 2 ** (attempt + 1)
+                print(
+                    f"Gemini temporarily unavailable. "
+                    f"Retrying in {wait_seconds} seconds..."
+                )
+                time.sleep(wait_seconds)
 
         return {
             "question": question,
-            "answer": response.text or "No answer was generated.",
+            "answer": (
+                response.text
+                if response and response.text
+                else "No answer was generated."
+            ),
             "sources": sources,
             "retrieved_chunks": len(results),
         }
+
 
 
 rag_service = RAGService()

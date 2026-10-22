@@ -2,6 +2,7 @@ from typing import Annotated
 from pathlib import Path
 from uuid import uuid4
 import shutil
+import hashlib
 from typing import List
 from fastapi import APIRouter, UploadFile, File, HTTPException
 
@@ -16,6 +17,8 @@ router = APIRouter(prefix="/documents", tags=["Documents"])
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+
 
 
 async def process_pdf(file: UploadFile) -> dict:
@@ -36,11 +39,26 @@ async def process_pdf(file: UploadFile) -> dict:
     saved_filename = f"{uuid4().hex}.pdf"
     file_path = UPLOAD_DIR / saved_filename
 
+   
+  
     try:
         with file_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
+        # Calculate the hash after closing the file.
+        file_hash = hashlib.sha256(file_path.read_bytes()).hexdigest()
+
+        # Skip duplicate documents.
+        if vector_store.has_document_hash(file_hash):
+            return {
+                "filename": original_filename,
+                "status": "duplicate",
+                "message": "This PDF has already been uploaded.",
+                "total_vectors_in_store": vector_store.count(),
+            }
+
         raw_text = extract_text_from_pdf(str(file_path))
+
         text = clean_text(raw_text)
 
         if not text.strip():
@@ -64,7 +82,10 @@ async def process_pdf(file: UploadFile) -> dict:
             embeddings,
             chunks,
             metadatas=[
-                {"filename": original_filename}
+                {
+                    "filename": original_filename,
+                    "file_hash": file_hash,
+                }
                 for _ in chunks
             ],
         )
@@ -133,3 +154,5 @@ async def upload_multiple_documents(
         "total_vectors_in_store": vector_store.count(),
         "results": results,
     }
+
+
