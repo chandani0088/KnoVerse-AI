@@ -134,6 +134,30 @@ class VectorStore:
             for metadata in self.metadatas
         )
     
+    def list_documents(self) -> List[dict]:
+        """Return unique documents stored in the vector store."""
+
+        documents = {}
+
+        for metadata in self.metadatas:
+            filename = metadata.get("filename", "unknown")
+            file_hash = metadata.get("file_hash")
+
+            # Use the file hash as identity when available.
+            key = file_hash or filename
+
+            if key not in documents:
+                documents[key] = {
+                    "filename": filename,
+                    "file_hash": file_hash,
+                    "chunk_count": 0,
+                }
+
+            documents[key]["chunk_count"] += 1
+
+        return list(documents.values())
+    
+    
     def count(self) -> int:
         """Return the number of stored vectors."""
         return self.index.ntotal

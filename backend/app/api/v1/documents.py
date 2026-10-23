@@ -154,5 +154,17 @@ async def upload_multiple_documents(
         "total_vectors_in_store": vector_store.count(),
         "results": results,
     }
+    
+@router.get("/")
+async def list_uploaded_documents():
+    """List indexed documents and their chunk counts."""
 
+    documents = vector_store.list_documents()
+
+    return {
+        "total_documents": len(documents),
+        "total_chunks": vector_store.count(),
+        "documents": documents,
+    }
+        
 
